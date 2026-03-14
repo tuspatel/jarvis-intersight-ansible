@@ -1,0 +1,201 @@
+---
+- name: Configure DNS via Device Connector API (production-ready, Torque-compatible)
+  hosts: "{{ group | default('Cisco_CSeries_servers') }}"
+  connection: local
+  gather_facts: false
+  any_errors_fatal: true
+
+  vars:
+    cimc_scheme: "{{ protocol | default('https') }}"
+    cimc_validate_certs: "{{ validate_certs | default(true) | bool }}"
+    nuova_uri: "{{ login_uri | default('/nuova') }}"
+    comm_configs_uri: "{{ comm_configs_uri | default('/connector/CommConfigs') }}"
+    cimc_base_url: "{{ cimc_scheme }}://{{ server_ip }}"
+    request_timeout: "{{ timeout | default(30) | int }}"
+    dns_name_servers_list: >-
+      {{
+        (
+          name_servers | default(NameServers | default(''))
+        ).split(',')
+        | map('trim')
+        | reject('equalto', '')
+        | list
+      }}
+    dns_domain_name: "{{ domain_name | default(DomainName | default('')) }}"
+
+  pre_tasks:
+    - name: Validate required inputs
+      ansible.builtin.assert:
+        that:
+          - server_ip is defined
+          - server_ip | length > 0
+          - user is defined
+          - user | length > 0
+          - new_password is defined
+          - new_password | length > 0
+        fail_msg: >-
+          Missing required variables. Required: server_ip, user, new_password.
+      tags:
+        - always
+        - validate
+
+  tasks:
+    - name: Login to CIMC and obtain session cookie
+      ansible.builtin.uri:
+        url: "{{ cimc_base_url }}{{ nuova_uri }}"
+        method: POST
+        validate_certs: "{{ cimc_validate_certs }}"
+        body: "<aaaLogin inPassword=\"{{ new_password }}\" inName=\"{{ user }}\" />"
+        return_content: true
+        status_code:
+          - 200
+        timeout: "{{ request_timeout }}"
+      register: login_response
+      changed_when: false
+      failed_when: false
+      no_log: true
+      tags:
+        - cimc
+        - auth
+        - dns
+
+    - name: Ensure login response contains outCookie
+      ansible.builtin.assert:
+        that:
+          - login_response.status | default(0) | int == 200
+          - login_response.content is defined
+          - "'outCookie' in login_response.content"
+        fail_msg: "CIMC login succeeded HTTP-wise but outCookie was not found in response."
+      tags:
+        - cimc
+        - auth
+        - dns
+
+    - name: Extract session cookie from login response
+      ansible.builtin.set_fact:
+        session_cookie: "{{ login_response.content | regex_search('outCookie=\"([^\"]+)\"', '\\1') | first }}"
+      no_log: true
+      tags:
+        - cimc
+        - auth
+        - dns
+
+    - name: Validate extracted session cookie
+      ansible.builtin.assert:
+        that:
+          - session_cookie is defined
+          - session_cookie | length > 0
+        fail_msg: "Session cookie extraction failed."
+      tags:
+        - cimc
+        - auth
+        - dns
+
+    - name: Read current Device Connector communication config
+      ansible.builtin.uri:
+        url: "{{ cimc_base_url }}{{ comm_configs_uri }}"
+        method: GET
+        validate_certs: "{{ cimc_validate_certs }}"
+        headers:
+          ucsmcookie: "ucsm-cookie={{ session_cookie }}"
+          Origin: "{{ cimc_base_url }}"
+          Referer: "{{ cimc_base_url }}/uiconnector/index.html"
+          language: "en"
+        status_code:
+          - 200
+          - 201
+        timeout: "{{ request_timeout }}"
+      register: current_config
+      changed_when: false
+      failed_when: false
+      no_log: true
+      tags:
+        - cimc
+        - precheck
+        - dns
+
+    - name: Configure DNS name servers and domain name
+      ansible.builtin.uri:
+        url: "{{ cimc_base_url }}{{ comm_configs_uri }}"
+        method: PUT
+        validate_certs: "{{ cimc_validate_certs }}"
+        headers:
+          ucsmcookie: "ucsm-cookie={{ session_cookie }}"
+          Content-Type: application/json
+        body_format: json
+        body:
+          NameServers: "{{ dns_name_servers_list }}"
+          DomainName: "{{ dns_domain_name }}"
+        status_code:
+          - 200
+          - 201
+          - 204
+        timeout: "{{ request_timeout }}"
+      register: dns_config_response
+      no_log: true
+      tags:
+        - cimc
+        - configure
+        - dns
+
+    - name: Verify DNS configuration after update
+      ansible.builtin.uri:
+        url: "{{ cimc_base_url }}{{ comm_configs_uri }}"
+        method: GET
+        validate_certs: "{{ cimc_validate_certs }}"
+        headers:
+          ucsmcookie: "ucsm-cookie={{ session_cookie }}"
+          Origin: "{{ cimc_base_url }}"
+          Referer: "{{ cimc_base_url }}/uiconnector/index.html"
+          language: "en"
+        status_code:
+          - 200
+          - 201
+        timeout: "{{ request_timeout }}"
+      register: verify_config
+      changed_when: false
+      failed_when: false
+      no_log: true
+      tags:
+        - cimc
+        - verify
+        - dns
+
+    - name: Build output facts
+      ansible.builtin.set_fact:
+        output_dns_config_applied: "{{ dns_config_response.status is defined and (dns_config_response.status | int in [200, 201, 204]) }}"
+        output_dns_config_status: "{{ dns_config_response.status | default('unknown') }}"
+        output_verify_status: "{{ verify_config.status | default('unknown') }}"
+        output_server_ip: "{{ server_ip }}"
+        output_name_servers: "{{ dns_name_servers_list }}"
+        output_domain_name: "{{ dns_domain_name }}"
+      tags:
+        - outputs
+        - dns
+
+    - name: Export outputs to Torque
+      torque.collections.export_torque_outputs:
+        outputs:
+          dns_config_applied: "{{ output_dns_config_applied }}"
+          dns_config_status: "{{ output_dns_config_status }}"
+          dns_verify_status: "{{ output_verify_status }}"
+          server_ip: "{{ output_server_ip }}"
+          configured_name_servers: "{{ output_name_servers }}"
+          configured_domain_name: "{{ output_domain_name }}"
+      delegate_to: localhost
+      run_once: true
+      tags:
+        - always
+      ignore_errors: true
+
+  post_tasks:
+    - name: Final production gate - ensure config call succeeded
+      ansible.builtin.assert:
+        that:
+          - dns_config_response.status is defined
+          - dns_config_response.status | int in [200, 201, 204]
+        fail_msg: "DNS configuration request failed."
+        success_msg: "DNS configuration workflow completed successfully."
+      tags:
+        - always
+        - validate

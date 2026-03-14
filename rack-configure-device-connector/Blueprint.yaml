@@ -1,0 +1,38 @@
+grains:
+  configure_dns:
+    kind: ansible
+    spec:
+      source:
+        store: automation-repo
+        path: ansible/configure-device-connector-dns/playbook.yaml
+      agent:
+        name: "{{ .inputs.agent }}"
+      inventory-file:
+        Cisco_CSeries_servers:
+          hosts:
+            "{{ .inputs.server_name }}":
+          vars:
+            server_ip: "{{ .inputs.server_ip }}"
+            user: "{{ .inputs.redfish_user }}"
+            new_password: "{{ .params.cimc_password }}"
+            validate_certs: false
+      inputs:
+        - group: "Cisco_CSeries_servers"
+        - name_servers: "{{ .inputs.name_servers }}"
+        - domain_name: "{{ .inputs.domain_name }}"
+      outputs:
+        - dns_config_applied
+        - dns_config_status
+        - dns_verify_status
+        - server_ip
+        - configured_name_servers
+        - configured_domain_name
+      on-destroy:
+        source:
+          store: automation-repo
+          path: ansible/configure-device-connector-dns/teardown.yaml
+        inventory-file:
+          localhost:
+            hosts:
+              127.0.0.1:
+                ansible_connection: local
