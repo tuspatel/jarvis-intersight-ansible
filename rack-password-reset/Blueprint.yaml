@@ -1,0 +1,37 @@
+grains:
+  redfish_password_reset:
+    kind: ansible
+    spec:
+      source:
+        store: automation-repo
+        path: ansible/redfish-password-reset/playbook.yaml
+      agent:
+        name: "{{ .inputs.agent }}"
+      inventory-file:
+        Cisco_CSeries_servers:
+          hosts:
+            "{{ .inputs.server_name }}":
+          vars:
+            server_ip: "{{ .inputs.server_ip }}"
+            user: "{{ .inputs.redfish_user }}"
+            default_password: "{{ .params.redfish_default_password }}"
+            new_password: "{{ .params.redfish_new_password }}"
+            validate_certs: false
+      inputs:
+        - group: "Cisco_CSeries_servers"
+        - account_id: "1"
+      outputs:
+        - password_reset_performed
+        - redfish_query_status
+        - password_reset_status
+        - password_verify_status
+        - redfish_account_uri
+      on-destroy:
+        source:
+          store: automation-repo
+          path: ansible/redfish-password-reset/teardown.yaml
+        inventory-file:
+          localhost:
+            hosts:
+              127.0.0.1:
+                ansible_connection: local

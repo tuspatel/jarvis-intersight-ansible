@@ -1,0 +1,168 @@
+---
+- name: C-series Rack password reset (production-ready, Torque-compatible)
+  hosts: "{{ group | default('Cisco_CSeries_servers') }}"
+  connection: local
+  gather_facts: false
+  any_errors_fatal: true
+
+  vars:
+    redfish_scheme: "{{ protocol | default('https') }}"
+    redfish_validate_certs: "{{ validate_certs | default(true) | bool }}"
+    redfish_account_id: "{{ account_id | default('1') }}"
+    redfish_accounts_uri: "{{ accounts_uri | default('/redfish/v1/AccountService/Accounts') }}"
+    redfish_account_uri: "{{ redfish_accounts_uri }}/{{ redfish_account_id }}"
+    redfish_base_url: "{{ redfish_scheme }}://{{ server_ip }}"
+    password_change_required_default: "{{ password_change_required_fallback | default(true) | bool }}"
+
+  pre_tasks:
+    - name: Validate required inputs
+      ansible.builtin.assert:
+        that:
+          - server_ip is defined
+          - server_ip | length > 0
+          - user is defined
+          - user | length > 0
+          - default_password is defined
+          - default_password | length > 0
+          - new_password is defined
+          - new_password | length > 0
+          - new_password != default_password
+        fail_msg: >-
+          Missing or invalid required inputs. Required variables: server_ip, user,
+          default_password, new_password. Also ensure new_password differs
+          from default_password.
+      tags:
+        - always
+        - validate
+
+  tasks:
+    - name: Query C-series Rack account details with default password
+      ansible.builtin.uri:
+        url: "{{ redfish_base_url }}{{ redfish_account_uri }}"
+        method: GET
+        user: "{{ user }}"
+        password: "{{ default_password }}"
+        force_basic_auth: true
+        validate_certs: "{{ redfish_validate_certs }}"
+        return_content: true
+        status_code:
+          - 200
+          - 401
+          - 403
+          - 404
+        timeout: 30
+      register: redfish_account_info
+      changed_when: false
+      failed_when: false
+      no_log: true
+      tags:
+        - redfish
+        - precheck
+        - password
+
+    - name: Derive password change requirement from API response
+      ansible.builtin.set_fact:
+        password_change_required: >-
+          {{
+            (redfish_account_info.status | int == 200)
+            and (redfish_account_info.json is defined)
+            and (
+              redfish_account_info.json.PasswordChangeRequired
+              | default(password_change_required_default)
+              | bool
+            )
+          }}
+      tags:
+        - redfish
+        - precheck
+        - password
+
+    - name: Apply fallback decision when precheck endpoint is not readable
+      ansible.builtin.set_fact:
+        password_change_required: "{{ password_change_required_default }}"
+      when: redfish_account_info.status | int != 200
+      tags:
+        - redfish
+        - precheck
+        - password
+
+    - name: Reset C-series Rack password when required
+      ansible.builtin.uri:
+        url: "{{ redfish_base_url }}{{ redfish_account_uri }}"
+        method: PATCH
+        user: "{{ user }}"
+        password: "{{ default_password }}"
+        force_basic_auth: true
+        validate_certs: "{{ redfish_validate_certs }}"
+        headers:
+          Content-Type: application/json
+        body_format: json
+        body:
+          Password: "{{ new_password }}"
+        status_code:
+          - 200
+          - 204
+        timeout: 30
+      register: password_reset_response
+      when: password_change_required | bool
+      no_log: true
+      tags:
+        - redfish
+        - reset
+        - password
+
+    - name: Verify new password works after reset
+      ansible.builtin.uri:
+        url: "{{ redfish_base_url }}{{ redfish_account_uri }}"
+        method: GET
+        user: "{{ user }}"
+        password: "{{ new_password }}"
+        force_basic_auth: true
+        validate_certs: "{{ redfish_validate_certs }}"
+        status_code:
+          - 200
+        timeout: 30
+      register: redfish_verify_new_password
+      when: password_change_required | bool
+      changed_when: false
+      no_log: true
+      tags:
+        - redfish
+        - verify
+        - password
+
+    - name: Build output facts
+      ansible.builtin.set_fact:
+        output_password_reset_performed: "{{ password_change_required | bool }}"
+        output_redfish_query_status: "{{ redfish_account_info.status | default('unknown') }}"
+        output_password_reset_status: "{{ password_reset_response.status | default('not_attempted') }}"
+        output_password_verify_status: "{{ redfish_verify_new_password.status | default('not_attempted') }}"
+        output_redfish_account_uri: "{{ redfish_account_uri }}"
+      tags:
+        - outputs
+        - redfish
+
+    - name: Export outputs to Torque
+      torque.collections.export_torque_outputs:
+        outputs:
+          password_reset_performed: "{{ output_password_reset_performed }}"
+          redfish_query_status: "{{ output_redfish_query_status }}"
+          password_reset_status: "{{ output_password_reset_status }}"
+          password_verify_status: "{{ output_password_verify_status }}"
+          redfish_account_uri: "{{ output_redfish_account_uri }}"
+      delegate_to: localhost
+      run_once: true
+      tags:
+        - always
+      ignore_errors: true
+
+  post_tasks:
+    - name: Final production gate for reset verification
+      ansible.builtin.assert:
+        that:
+          - not (password_change_required | bool) or (redfish_verify_new_password.status | default(0) | int == 200)
+        fail_msg: Password reset executed but verification with new password failed.
+        success_msg: Password reset workflow completed successfully.
+      tags:
+        - always
+        - validate
