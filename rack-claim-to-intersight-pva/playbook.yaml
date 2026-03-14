@@ -1,0 +1,125 @@
+---
+- name: Claim standalone Cisco UCS server to Intersight PVA (production-ready, Torque-compatible)
+  hosts: "{{ group | default('Cisco_CSeries_servers') }}"
+  connection: local
+  gather_facts: false
+  any_errors_fatal: true
+
+  vars:
+    intersight_validate_certs: "{{ validate_certs | default(true) | bool }}"
+    intersight_api_uri: "https://{{ intersight_pva_ip }}"
+    workflow_name: "{{ claim_workflow_name | default('Device registration request') }}"
+    workflow_status_target: "{{ claim_workflow_status | default('COMPLETED') }}"
+    workflow_retries: "{{ claim_workflow_retries | default(120) | int }}"
+    workflow_delay: "{{ claim_workflow_delay | default(15) | int }}"
+    workflow_top: "{{ claim_workflow_top | default(1) | int }}"
+    intersight_api_info: &intersight_api_info
+      api_key_id: "{{ api_key | default(api_key_id) }}"
+      api_private_key: "{{ lookup('ansible.builtin.file', api_private_key_path) }}"
+      api_uri: "{{ intersight_api_uri }}"
+      validate_certs: "{{ intersight_validate_certs }}"
+
+  pre_tasks:
+    - name: Validate required inputs
+      ansible.builtin.assert:
+        that:
+          - server_cimc_ip is defined
+          - server_cimc_ip | length > 0
+          - server_cimc_username is defined
+          - server_cimc_username | length > 0
+          - server_cimc_password is defined
+          - server_cimc_password | length > 0
+          - intersight_pva_ip is defined
+          - intersight_pva_ip | length > 0
+          - (api_key is defined and api_key | length > 0) or (api_key_id is defined and api_key_id | length > 0)
+          - api_private_key_path is defined
+          - api_private_key_path | length > 0
+        fail_msg: >-
+          Missing required variables. Required: server_cimc_ip, server_cimc_username,
+          server_cimc_password, intersight_pva_ip, api_key (or api_key_id),
+          api_private_key_path.
+      tags:
+        - always
+        - validate
+
+  tasks:
+    - name: Claim target server using appliance DeviceClaims endpoint
+      cisco.intersight.intersight_rest_api:
+        <<: *intersight_api_info
+        update_method: post
+        resource_path: "/api/v1/appliance/DeviceClaims"
+        api_body:
+          Username: "{{ server_cimc_username }}"
+          Password: "{{ server_cimc_password }}"
+          Hostname: "{{ server_cimc_ip }}"
+          PlatformType: "{{ platform_type | default('IMC') }}"
+      register: claim_result
+      no_log: true
+      tags:
+        - claim
+        - intersight
+        - ucs
+
+    - name: Poll workflow status until claim is completed
+      cisco.intersight.intersight_rest_api:
+        <<: *intersight_api_info
+        resource_path: "/api/v1/workflow/WorkflowInfos"
+        query_params:
+          $filter: >-
+            Name eq '{{ workflow_name }}'
+            and WorkflowCtx/InitiatorCtx/InitiatorName eq '{{ server_cimc_ip }}'
+            and Status eq '{{ workflow_status_target }}'
+          $top: "{{ workflow_top }}"
+      register: workflow_check
+      until:
+        - workflow_check.api_response is defined
+        - workflow_check.api_response | length > 0
+      retries: "{{ workflow_retries }}"
+      delay: "{{ workflow_delay }}"
+      no_log: true
+      tags:
+        - claim
+        - intersight
+        - verify
+        - workflow
+
+    - name: Build output facts
+      ansible.builtin.set_fact:
+        output_claim_submitted: true
+        output_server_cimc_ip: "{{ server_cimc_ip }}"
+        output_intersight_pva_ip: "{{ intersight_pva_ip }}"
+        output_claim_changed: "{{ claim_result.changed | default(false) | bool }}"
+        output_workflow_match_count: "{{ workflow_check.api_response | default([]) | length }}"
+        output_claim_workflow_completed: "{{ (workflow_check.api_response | default([]) | length) > 0 }}"
+      tags:
+        - outputs
+        - intersight
+
+    - name: Export outputs to Torque
+      torque.collections.export_torque_outputs:
+        outputs:
+          claim_submitted: "{{ output_claim_submitted }}"
+          server_cimc_ip: "{{ output_server_cimc_ip }}"
+          intersight_pva_ip: "{{ output_intersight_pva_ip }}"
+          claim_changed: "{{ output_claim_changed }}"
+          workflow_match_count: "{{ output_workflow_match_count }}"
+          claim_workflow_completed: "{{ output_claim_workflow_completed }}"
+      delegate_to: localhost
+      run_once: true
+      tags:
+        - always
+      ignore_errors: true
+
+  post_tasks:
+    - name: Final production gate - fail if workflow did not complete
+      ansible.builtin.assert:
+        that:
+          - workflow_check.api_response is defined
+          - workflow_check.api_response | length > 0
+        fail_msg: >-
+          Claim request was sent, but workflow did not reach COMPLETED
+          status in the allowed retry window.
+        success_msg: Claim workflow completed successfully.
+      tags:
+        - always
+        - validate

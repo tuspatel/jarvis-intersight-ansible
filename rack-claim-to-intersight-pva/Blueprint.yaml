@@ -1,0 +1,40 @@
+grains:
+  claim_ucs_server:
+    kind: ansible
+    spec:
+      source:
+        store: automation-repo
+        path: ansible/claim-ucs-to-intersight-pva/playbook.yaml
+      agent:
+        name: "{{ .inputs.agent }}"
+      inventory-file:
+        Cisco_CSeries_servers:
+          hosts:
+            "{{ .inputs.server_name }}":
+          vars:
+            server_cimc_ip: "{{ .inputs.server_cimc_ip }}"
+            server_cimc_username: "{{ .inputs.server_cimc_username }}"
+            server_cimc_password: "{{ .params.server_cimc_password }}"
+            intersight_pva_ip: "{{ .inputs.intersight_pva_ip }}"
+            api_key_id: "{{ .params.intersight_api_key_id }}"
+            api_private_key_path: "{{ .params.intersight_api_private_key_path }}"
+            validate_certs: false
+      inputs:
+        - group: "Cisco_CSeries_servers"
+        - platform_type: "IMC"
+      outputs:
+        - claim_submitted
+        - server_cimc_ip
+        - intersight_pva_ip
+        - claim_changed
+        - workflow_match_count
+        - claim_workflow_completed
+      on-destroy:
+        source:
+          store: automation-repo
+          path: ansible/claim-ucs-to-intersight-pva/teardown.yaml
+        inventory-file:
+          localhost:
+            hosts:
+              127.0.0.1:
+                ansible_connection: local
