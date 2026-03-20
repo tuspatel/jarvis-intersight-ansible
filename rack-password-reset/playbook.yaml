@@ -1,5 +1,5 @@
 ---
-- name: C-series Rack password reset (production-ready, Torque-compatible)
+- name: C-series Rack password reset ( Torque-compatible)
   hosts: "{{ group | default('Cisco_CSeries_servers') }}"
   connection: local
   gather_facts: false

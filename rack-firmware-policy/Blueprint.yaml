@@ -1,0 +1,42 @@
+# Blueprint grain snippet (example)
+grains:
+  configure_firmware_policy:
+    kind: ansible
+    spec:
+      source:
+        store: automation-repo
+        path: ansible/configure-firmware-policy/playbook.yaml
+      agent:
+        name: "{{ .inputs.agent }}"
+      inventory-file:
+        localhost:
+          hosts:
+            127.0.0.1:
+              ansible_connection: local
+          vars:
+            api_key_id: "{{ .params.intersight_api_key_id }}"
+            api_private_key: "{{ .params.intersight_api_private_key }}"
+            validate_certs: false
+      inputs:
+        - organization: "{{ .inputs.organization }}"
+        - firmware_policy_name: "{{ .inputs.firmware_policy_name }}"
+        - target_platform: "{{ .inputs.target_platform }}"
+      outputs:
+        - firmware_policy_name
+        - firmware_policy_org
+        - firmware_policy_state
+        - firmware_policy_changed
+      on-destroy:
+        source:
+          store: automation-repo
+          path: ansible/configure-firmware-policy/teardown.yaml
+        inventory-file:
+          localhost:
+            hosts:
+              127.0.0.1:
+                ansible_connection: local
+        inputs:
+          - organization: "{{ .inputs.organization }}"
+          - firmware_policy_name: "{{ .inputs.firmware_policy_name }}"
+          - api_key_id: "{{ .params.intersight_api_key_id }}"
+          - api_private_key: "{{ .params.intersight_api_private_key }}"

@@ -1,0 +1,105 @@
+---
+# ansible/configure-server-profile/playbook.yaml
+- name: Configure Intersight Server Profile ( Torque-compatible)
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  any_errors_fatal: true
+
+  vars:
+    api_info: &api_info
+      api_private_key: "{{ api_private_key | default(omit) }}"
+      api_key_id: "{{ api_key_id | default(omit) }}"
+      api_uri: "{{ api_uri | default(omit) }}"
+      validate_certs: "{{ validate_certs | default(true) | bool }}"
+      state: "{{ state | default('present') }}"
+
+    org_name: "{{ organization | default('default') }}"
+    server_profile_name: "{{ server_profile_name | default('SP-Server1') }}"
+    target_platform: "{{ target_platform | default('Standalone') }}"
+    profile_description: "{{ profile_description | default('Profile for JV standalone server') }}"
+    assigned_server: "{{ assigned_server | default('5e3b517d6176752d319a9999') }}"
+    boot_order_policy: "{{ boot_order_policy | default('jv-boot-policy') }}"
+    firmware_policy: "{{ firmware_policy | default('jv-firmware-policy') }}"
+    site_tag_value: "{{ site_tag_value | default('AIPOD') }}"
+
+  pre_tasks:
+    - name: Validate required API and profile inputs
+      ansible.builtin.assert:
+        that:
+          - (api_key_id is defined and api_key_id | length > 0) or (lookup('ansible.builtin.env', 'INTERSIGHT_API_KEY_ID') | length > 0)
+          - (api_private_key is defined and api_private_key | length > 0) or (lookup('ansible.builtin.env', 'INTERSIGHT_API_PRIVATE_KEY') | length > 0)
+          - server_profile_name | length > 0
+          - target_platform | length > 0
+          - assigned_server | length > 0
+          - boot_order_policy | length > 0
+          - firmware_policy | length > 0
+        fail_msg: >-
+          Missing required values. Ensure API credentials are set and profile
+          inputs are provided: server_profile_name, target_platform, assigned_server,
+          boot_order_policy, firmware_policy.
+      tags:
+        - always
+        - validate
+
+  tasks:
+    - name: Create or update server profile
+      cisco.intersight.intersight_server_profile:
+        <<: *api_info
+        organization: "{{ org_name }}"
+        name: "{{ server_profile_name }}"
+        target_platform: "{{ target_platform }}"
+        description: "{{ profile_description }}"
+        assigned_server: "{{ assigned_server }}"
+        boot_order_policy: "{{ boot_order_policy }}"
+        firmware_policy: "{{ firmware_policy }}"
+        tags:
+          - Key: "site"
+            Value: "{{ site_tag_value }}"
+          - Key: "managed_by"
+            Value: "{{ managed_by_tag | default('Jarvis') }}"
+          - Key: "environment"
+            Value: "{{ environment | default('dev') }}"
+      register: server_profile_result
+      no_log: true
+      tags:
+        - profile
+        - intersight
+        - server
+
+    - name: Build output facts
+      ansible.builtin.set_fact:
+        output_server_profile_name: "{{ server_profile_name }}"
+        output_server_profile_org: "{{ org_name }}"
+        output_server_profile_state: "{{ state | default('present') }}"
+        output_server_profile_changed: "{{ server_profile_result.changed | default(false) | bool }}"
+        output_assigned_server: "{{ assigned_server }}"
+      tags:
+        - outputs
+        - profile
+
+    - name: Export outputs to Torque
+      torque.collections.export_torque_outputs:
+        outputs:
+          server_profile_name: "{{ output_server_profile_name }}"
+          server_profile_org: "{{ output_server_profile_org }}"
+          server_profile_state: "{{ output_server_profile_state }}"
+          server_profile_changed: "{{ output_server_profile_changed }}"
+          assigned_server: "{{ output_assigned_server }}"
+      delegate_to: localhost
+      run_once: true
+      tags:
+        - always
+      ignore_errors: true
+
+  post_tasks:
+    - name: Final production gate - verify server profile task completion
+      ansible.builtin.assert:
+        that:
+          - server_profile_result is defined
+          - server_profile_result.failed is not defined or not server_profile_result.failed
+        fail_msg: Server profile configuration failed.
+        success_msg: Server profile configuration completed successfully.
+      tags:
+        - always
+        - validate

@@ -1,0 +1,5 @@
+---
+# ansible/configure-firmware-policy/requirements.yaml
+collections:
+  - name: cisco.intersight
+  - name: torque.collections

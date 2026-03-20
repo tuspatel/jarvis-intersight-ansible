@@ -1,5 +1,5 @@
 ---
-- name: Claim standalone Cisco UCS server to Intersight PVA (production-ready, Torque-compatible)
+- name: Claim standalone Cisco UCS server to Intersight PVA ( Torque-compatible)
   hosts: "{{ group | default('Cisco_CSeries_servers') }}"
   connection: local
   gather_facts: false

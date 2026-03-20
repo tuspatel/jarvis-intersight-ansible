@@ -1,0 +1,42 @@
+# Blueprint grain snippet (example)
+grains:
+  configure_boot_policy:
+    kind: ansible
+    spec:
+      source:
+        store: automation-repo
+        path: ansible/configure-boot-order-policy/playbook.yaml
+      agent:
+        name: "{{ .inputs.agent }}"
+      inventory-file:
+        localhost:
+          hosts:
+            127.0.0.1:
+              ansible_connection: local
+          vars:
+            api_key_id: "{{ .params.intersight_api_key_id }}"
+            api_private_key: "{{ .params.intersight_api_private_key }}"
+            validate_certs: false
+      inputs:
+        - organization: "{{ .inputs.organization }}"
+        - boot_policy_name: "{{ .inputs.boot_policy_name }}"
+        - configured_boot_mode: "{{ .inputs.configured_boot_mode }}"
+      outputs:
+        - boot_policy_name
+        - boot_policy_org
+        - boot_policy_state
+        - boot_policy_changed
+      on-destroy:
+        source:
+          store: automation-repo
+          path: ansible/configure-boot-order-policy/teardown.yaml
+        inventory-file:
+          localhost:
+            hosts:
+              127.0.0.1:
+                ansible_connection: local
+        inputs:
+          - organization: "{{ .inputs.organization }}"
+          - boot_policy_name: "{{ .inputs.boot_policy_name }}"
+          - api_key_id: "{{ .params.intersight_api_key_id }}"
+          - api_private_key: "{{ .params.intersight_api_private_key }}"

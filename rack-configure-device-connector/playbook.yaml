@@ -1,5 +1,5 @@
 ---
-- name: Configure DNS via Device Connector API (production-ready, Torque-compatible)
+- name: Configure DNS via Device Connector API ( Torque-compatible)
   hosts: "{{ group | default('Cisco_CSeries_servers') }}"
   connection: local
   gather_facts: false

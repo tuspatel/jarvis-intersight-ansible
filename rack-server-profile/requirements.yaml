@@ -1,0 +1,5 @@
+---
+# ansible/configure-server-profile/requirements.yaml
+collections:
+  - name: cisco.intersight
+  - name: torque.collections

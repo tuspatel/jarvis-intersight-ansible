@@ -1,0 +1,5 @@
+---
+# ansible/configure-boot-order-policy/requirements.yaml
+collections:
+  - name: cisco.intersight
+  - name: torque.collections

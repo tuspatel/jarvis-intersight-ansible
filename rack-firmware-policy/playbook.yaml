@@ -1,0 +1,102 @@
+---
+# ansible/configure-firmware-policy/playbook.yaml
+- name: Configure Intersight Firmware Policy ( Torque-compatible)
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  any_errors_fatal: true
+
+  vars:
+    api_info: &api_info
+      api_private_key: "{{ api_private_key | default(omit) }}"
+      api_key_id: "{{ api_key_id | default(omit) }}"
+      api_uri: "{{ api_uri | default(omit) }}"
+      validate_certs: "{{ validate_certs | default(true) | bool }}"
+      state: "{{ state | default('present') }}"
+
+    org_name: "{{ organization | default('default') }}"
+    firmware_policy_name: "{{ firmware_policy_name | default('jv-firmware-policy') }}"
+    firmware_policy_description: "{{ firmware_policy_description | default('Firmware policy for standalone servers') }}"
+    target_platform: "{{ target_platform | default('Standalone') }}"
+    model_bundle_combo: "{{ model_bundle_combo | default(default_model_bundle_combo) }}"
+    default_model_bundle_combo:
+      - model_family: "UCSC-C220-M8"
+        bundle_version: "6.0(1.250174)"
+      - model_family: "UCSC-C240-M8"
+        bundle_version: "6.0(1.250174)"
+    deployment_type_tag: "{{ deployment_type_tag | default('Jarvis') }}"
+
+  pre_tasks:
+    - name: Validate required API inputs
+      ansible.builtin.assert:
+        that:
+          - (api_key_id is defined and api_key_id | length > 0) or (lookup('ansible.builtin.env', 'INTERSIGHT_API_KEY_ID') | length > 0)
+          - (api_private_key is defined and api_private_key | length > 0) or (lookup('ansible.builtin.env', 'INTERSIGHT_API_PRIVATE_KEY') | length > 0)
+          - firmware_policy_name | length > 0
+          - target_platform | length > 0
+          - model_bundle_combo is iterable
+          - model_bundle_combo | length > 0
+        fail_msg: >-
+          Missing required values. Ensure API credentials are supplied and
+          firmware policy inputs are valid.
+      tags:
+        - always
+        - validate
+
+  tasks:
+    - name: Create or update firmware policy
+      cisco.intersight.intersight_firmware_policy:
+        <<: *api_info
+        organization: "{{ org_name }}"
+        name: "{{ firmware_policy_name }}"
+        description: "{{ firmware_policy_description }}"
+        target_platform: "{{ target_platform }}"
+        model_bundle_combo: "{{ model_bundle_combo }}"
+        tags:
+          - Key: "deployment_type"
+            Value: "{{ deployment_type_tag }}"
+          - Key: "managed_by"
+            Value: "{{ managed_by_tag | default('Jarvis') }}"
+          - Key: "environment"
+            Value: "{{ environment | default('dev') }}"
+      register: firmware_policy_result
+      no_log: true
+      tags:
+        - firmware
+        - policies
+        - intersight
+
+    - name: Build output facts
+      ansible.builtin.set_fact:
+        output_firmware_policy_name: "{{ firmware_policy_name }}"
+        output_firmware_policy_org: "{{ org_name }}"
+        output_firmware_policy_state: "{{ state | default('present') }}"
+        output_firmware_policy_changed: "{{ firmware_policy_result.changed | default(false) | bool }}"
+      tags:
+        - outputs
+        - firmware
+
+    - name: Export outputs to Torque
+      torque.collections.export_torque_outputs:
+        outputs:
+          firmware_policy_name: "{{ output_firmware_policy_name }}"
+          firmware_policy_org: "{{ output_firmware_policy_org }}"
+          firmware_policy_state: "{{ output_firmware_policy_state }}"
+          firmware_policy_changed: "{{ output_firmware_policy_changed }}"
+      delegate_to: localhost
+      run_once: true
+      tags:
+        - always
+      ignore_errors: true
+
+  post_tasks:
+    - name: Final production gate - verify firmware policy task completion
+      ansible.builtin.assert:
+        that:
+          - firmware_policy_result is defined
+          - firmware_policy_result.failed is not defined or not firmware_policy_result.failed
+        fail_msg: Firmware policy configuration failed.
+        success_msg: Firmware policy configuration completed successfully.
+      tags:
+        - always
+        - validate
