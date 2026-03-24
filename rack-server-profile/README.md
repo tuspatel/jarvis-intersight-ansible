@@ -1,6 +1,4 @@
-# ansible/configure-server-profile/README.md
-
-# configure-server-profile
+# rack-server-profile
 
 Creates or updates an Intersight server profile for standalone rack servers.
 

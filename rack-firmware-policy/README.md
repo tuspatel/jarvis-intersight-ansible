@@ -1,6 +1,4 @@
-# ansible/configure-firmware-policy/README.md
-
-# configure-firmware-policy
+# rack-firmware-policy
 
 Creates or updates an Intersight firmware policy for standalone rack servers.
 

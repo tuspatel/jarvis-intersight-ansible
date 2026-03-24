@@ -1,6 +1,4 @@
-# ansible/configure-boot-order-policy/README.md
-
-# configure-boot-order-policy
+# rack-boot-order-policy
 
 Creates or updates an Intersight Boot Order Policy using `cisco.intersight.intersight_boot_order_policy`.
 

@@ -1,6 +1,4 @@
-# ansible/claim-standalone-cseries-intersight/README.md
-
-# claim-standalone-cseries-intersight
+# rack-claim-to-intersight-saas
 
 Claims a standalone UCS C-Series server in Intersight using serial number and claim/security token.
 

@@ -4,7 +4,7 @@ grains:
     spec:
       source:
         store: automation-repo
-        path: ansible/claim-ucs-to-intersight-pva/playbook.yaml
+        path: rack-claim-to-intersight-pva/playbook.yaml
       agent:
         name: "{{ .inputs.agent }}"
       inventory-file:
@@ -32,7 +32,7 @@ grains:
       on-destroy:
         source:
           store: automation-repo
-          path: ansible/claim-ucs-to-intersight-pva/teardown.yaml
+          path: rack-claim-to-intersight-pva/teardown.yaml
         inventory-file:
           localhost:
             hosts:

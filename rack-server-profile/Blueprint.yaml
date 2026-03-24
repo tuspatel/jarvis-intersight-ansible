@@ -5,7 +5,7 @@ grains:
     spec:
       source:
         store: automation-repo
-        path: ansible/configure-server-profile/playbook.yaml
+        path: rack-server-profile/playbook.yaml
       agent:
         name: "{{ .inputs.agent }}"
       inventory-file:
@@ -33,7 +33,7 @@ grains:
       on-destroy:
         source:
           store: automation-repo
-          path: ansible/configure-server-profile/teardown.yaml
+          path: rack-server-profile/teardown.yaml
         inventory-file:
           localhost:
             hosts:

@@ -4,7 +4,7 @@ grains:
     spec:
       source:
         store: automation-repo
-        path: ansible/redfish-password-reset/playbook.yaml
+        path: rack-password-reset/playbook.yaml
       agent:
         name: "{{ .inputs.agent }}"
       inventory-file:
@@ -29,7 +29,7 @@ grains:
       on-destroy:
         source:
           store: automation-repo
-          path: ansible/redfish-password-reset/teardown.yaml
+          path: rack-password-reset/teardown.yaml
         inventory-file:
           localhost:
             hosts:

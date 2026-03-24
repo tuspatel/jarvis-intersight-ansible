@@ -1,4 +1,4 @@
-# configure-device-connector-dns
+# rack-configure-device-connector
 
 Configure DNS NameServers and DomainName through Cisco CIMC Device Connector API.
 
