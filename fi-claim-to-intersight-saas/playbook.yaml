@@ -1,0 +1,84 @@
+---
+- name: Claim Cisco UCS Fabric Interconnect in Intersight (Torque-compatible)
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  any_errors_fatal: true
+
+  vars:
+    api_info: &api_info
+      api_private_key: "{{ api_private_key | default(omit) }}"
+      api_key_id: "{{ api_key_id | default(omit) }}"
+      api_uri: "{{ api_uri | default(omit) }}"
+      validate_certs: "{{ validate_certs | default(true) | bool }}"
+
+    resolved_fi_serial_number: "{{ fi_serial_number | default(device_serial_number | default(device_id | default(''))) }}"
+    resolved_fi_claim_code: "{{ fi_claim_code | default(device_claim_code | default(claim_code | default(''))) }}"
+    resolved_claim_resource_path: "{{ claim_resource_path | default('/api/v1/asset/DeviceClaims') }}"
+
+  pre_tasks:
+    - name: Validate required FI claim inputs and API auth
+      ansible.builtin.assert:
+        that:
+          - (api_key_id is defined and api_key_id | length > 0) or (lookup('ansible.builtin.env', 'INTERSIGHT_API_KEY_ID') | length > 0)
+          - (api_private_key is defined and api_private_key | length > 0) or (lookup('ansible.builtin.env', 'INTERSIGHT_API_PRIVATE_KEY') | length > 0)
+          - resolved_fi_serial_number | length > 0
+          - resolved_fi_claim_code | length > 0
+        fail_msg: >-
+          Missing required values. Provide API credentials and FI claim inputs:
+          fi_serial_number (or device_serial_number/device_id),
+          fi_claim_code (or device_claim_code/claim_code).
+      tags:
+        - always
+        - validate
+
+  tasks:
+    - name: Submit Fabric Interconnect device claim to Intersight
+      cisco.intersight.intersight_rest_api:
+        <<: *api_info
+        resource_path: "{{ resolved_claim_resource_path }}"
+        update_method: post
+        api_body:
+          SecurityToken: "{{ resolved_fi_claim_code }}"
+          SerialNumber: "{{ resolved_fi_serial_number }}"
+      register: claim_result
+      no_log: true
+      tags:
+        - claim
+        - intersight
+        - fi
+
+    - name: Build output facts
+      ansible.builtin.set_fact:
+        output_claim_submitted: true
+        output_claim_changed: "{{ claim_result.changed | default(false) | bool }}"
+        output_fi_serial_number: "{{ resolved_fi_serial_number }}"
+        output_claim_resource_path: "{{ resolved_claim_resource_path }}"
+      tags:
+        - outputs
+        - claim
+
+    - name: Export outputs to Torque
+      torque.collections.export_torque_outputs:
+        outputs:
+          claim_submitted: "{{ output_claim_submitted }}"
+          claim_changed: "{{ output_claim_changed }}"
+          fi_serial_number: "{{ output_fi_serial_number }}"
+          claim_resource_path: "{{ output_claim_resource_path }}"
+      delegate_to: localhost
+      run_once: true
+      tags:
+        - always
+      ignore_errors: true
+
+  post_tasks:
+    - name: Final production gate - verify FI claim request completion
+      ansible.builtin.assert:
+        that:
+          - claim_result is defined
+          - claim_result.failed is not defined or not claim_result.failed
+        fail_msg: Fabric Interconnect claim submission failed.
+        success_msg: Fabric Interconnect claim submission completed successfully.
+      tags:
+        - always
+        - validate

@@ -1,0 +1,23 @@
+---
+- name: Fabric Interconnect claim teardown (no-op)
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  tasks:
+    - name: Teardown no-op for FI claim grain
+      ansible.builtin.debug:
+        msg: No teardown action required for Fabric Interconnect claim grain.
+      tags:
+        - always
+        - teardown
+
+    - name: Export teardown status to Torque
+      torque.collections.export_torque_outputs:
+        outputs:
+          teardown_status: no_op
+      delegate_to: localhost
+      run_once: true
+      tags:
+        - always
+      ignore_errors: true
