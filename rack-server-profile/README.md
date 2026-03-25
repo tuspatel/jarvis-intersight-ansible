@@ -52,4 +52,4 @@ Creates or updates an Intersight server profile for standalone rack servers.
 
 ## Teardown
 
-`teardown.yaml` deletes the server profile with `state: absent`.
+`blueprints/rack-server-profile-teardown.yaml` deletes the server profile with `state: absent`.

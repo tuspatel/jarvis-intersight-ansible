@@ -60,4 +60,4 @@ ansible-playbook fi-claim-to-intersight-saas/playbook.yaml \
 
 ## Teardown
 
-`teardown.yaml` is intentionally no-op and exports `teardown_status: no_op`.
+`blueprints/fi-claim-to-intersight-saas-teardown.yaml` is intentionally no-op and exports `teardown_status: no_op`.

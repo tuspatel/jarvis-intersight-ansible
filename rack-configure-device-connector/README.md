@@ -59,4 +59,4 @@ Configure DNS NameServers and DomainName through Cisco CIMC Device Connector API
 
 ## Teardown
 
-`teardown.yaml` is intentionally no-op and exports `teardown_status: no_op`.
+`blueprints/rack-configure-device-connector-teardown.yaml` is intentionally no-op and exports `teardown_status: no_op`.

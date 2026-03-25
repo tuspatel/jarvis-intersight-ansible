@@ -31,7 +31,7 @@ grains:
       on-destroy:
         source:
           store: automation-repo
-          path: rack-configure-device-connector/teardown.yaml
+          path: blueprints/rack-configure-device-connector-teardown.yaml
         inventory-file:
           localhost:
             hosts:

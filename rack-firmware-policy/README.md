@@ -49,4 +49,4 @@ Creates or updates an Intersight firmware policy for standalone rack servers.
 
 ## Teardown
 
-`teardown.yaml` deletes the firmware policy with `state: absent`.
+`blueprints/rack-firmware-policy-teardown.yaml` deletes the firmware policy with `state: absent`.

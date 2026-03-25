@@ -49,4 +49,4 @@ Creates or updates an Intersight Boot Order Policy using `cisco.intersight.inter
 
 ## Teardown
 
-`teardown.yaml` deletes the boot policy with `state: absent`.
+`blueprints/rack-boot-order-policy-teardown.yaml` deletes the boot policy with `state: absent`.
