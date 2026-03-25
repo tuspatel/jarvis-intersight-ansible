@@ -58,4 +58,4 @@ then validates completion through workflow API polling.
 
 ## Teardown
 
-`blueprints/rack-claim-to-intersight-pva-teardown.yaml` is intentionally no-op and exports `teardown_status: no_op`.
+`teardown.yaml` is intentionally no-op and exports `teardown_status: no_op`.

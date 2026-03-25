@@ -34,7 +34,7 @@ grains:
       on-destroy:
         source:
           store: automation-repo
-          path: blueprints/rack-server-profile-teardown.yaml
+          path: rack-server-profile/teardown.yaml
         inventory-file:
           localhost:
             hosts:

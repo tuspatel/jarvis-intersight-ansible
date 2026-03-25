@@ -1,12 +1,12 @@
 # Blueprint grain snippet (example)
 spec_version: 2
 grains:
-  claim_standalone_cseries:
+  claim_fabric_interconnect:
     kind: ansible
     spec:
       source:
         store: automation-repo
-        path: rack-claim-to-intersight-saas/playbook.yaml
+        path: fi-claim-to-intersight-saas/playbook.yaml
       agent:
         name: "{{ .inputs.agent }}"
       inventory-file:
@@ -19,17 +19,17 @@ grains:
             api_private_key: "{{ .params.intersight_api_private_key }}"
             validate_certs: false
       inputs:
-        - device_serial_number: "{{ .inputs.device_serial_number }}"
-        - device_claim_code: "{{ .inputs.device_claim_code }}"
+        - fi_serial_number: "{{ .inputs.fi_serial_number }}"
+        - fi_claim_code: "{{ .inputs.fi_claim_code }}"
       outputs:
         - claim_submitted
         - claim_changed
-        - device_serial_number
+        - fi_serial_number
         - claim_resource_path
       on-destroy:
         source:
           store: automation-repo
-          path: blueprints/rack-claim-to-intersight-saas-teardown.yaml
+          path: fi-claim-to-intersight-saas/teardown.yaml
         inventory-file:
           localhost:
             hosts:

@@ -33,7 +33,7 @@ grains:
       on-destroy:
         source:
           store: automation-repo
-          path: blueprints/rack-claim-to-intersight-pva-teardown.yaml
+          path: rack-claim-to-intersight-pva/teardown.yaml
         inventory-file:
           localhost:
             hosts:

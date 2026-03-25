@@ -45,4 +45,4 @@ Designed to be production-ready and Torque/Jarvis-compatible.
 
 ## Teardown
 
-`blueprints/rack-password-reset-teardown.yaml` is intentionally no-op and exports `teardown_status: no_op`.
+`teardown.yaml` is intentionally no-op and exports `teardown_status: no_op`.

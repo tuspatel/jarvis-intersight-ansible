@@ -31,16 +31,11 @@ Use this skill for tasks in this repository that involve reviewing or changing a
   - `rack-claim-to-intersight-pva`
   - `fi-claim-to-intersight-saas`
 - Most workflow folders contain the same contract surface:
-- Most workflow folders contain the same implementation surface:
   - `playbook.yaml`
+  - `Blueprint.yaml`
+  - `teardown.yaml`
   - `requirements.yaml`
   - `README.md`
-- Workflow blueprints are centralized under `blueprints/` and named with their
-  former parent directory as a prefix, for example
-  `blueprints/rack-server-profile-Blueprint.yaml`.
-- Workflow teardown playbooks are also centralized under `blueprints/` and named
-  with their former parent directory as a prefix, for example
-  `blueprints/rack-server-profile-teardown.yaml`.
 - The top-level `README.md` is minimal, so treat each workflow `README.md` as the
   primary documentation source.
 - The repository now also includes root support folders such as `blueprints/` and
@@ -52,9 +47,8 @@ For any workflow change, read these files in the target folder before editing:
 
 1. `README.md` for supported inputs, outputs, and behavior.
 2. `playbook.yaml` for variable names, defaults, tags, and validation logic.
-3. The corresponding centralized teardown file under `blueprints/` to confirm
-   whether destroy is real or intentionally no-op.
-4. The corresponding file under `blueprints/` to confirm the Torque-facing contract.
+3. `teardown.yaml` to confirm whether destroy is real or intentionally no-op.
+4. `Blueprint.yaml` to confirm the Torque-facing contract.
 5. `requirements.yaml` to confirm needed collections.
 
 If the request spans multiple workflows, compare them for naming and output
@@ -80,13 +74,12 @@ consistency before making edits.
 ### Working rules
 
 - Keep the workflow contract aligned across `README.md`, `playbook.yaml`,
-  the centralized teardown file under `blueprints/`, the centralized blueprint
-  file under `blueprints/`, and `requirements.yaml`.
+  `teardown.yaml`, `Blueprint.yaml`, and `requirements.yaml`.
 - When adding or renaming an input, update all places that declare, consume, or
   document it.
 - When adding or renaming an output, update both the `set_fact` block and
   `torque.collections.export_torque_outputs`, then reflect it in `README.md` and
-  the matching blueprint file under `blueprints/`.
+  `Blueprint.yaml`.
 - Preserve the existing style:
   - `pre_tasks` assertions for required input validation
   - `tasks` for the main action
@@ -100,9 +93,8 @@ consistency before making edits.
 
 ### Torque contract rules for repo workflows
 
-- In the centralized blueprint file under `blueprints/`, the Ansible grain
-  `spec.inputs` section is passed to Ansible as extra-vars. Treat those names as
-  the public interface.
+- In `Blueprint.yaml`, the Ansible grain `spec.inputs` section is passed to Ansible
+  as extra-vars. Treat those names as the public interface.
 - `inventory-file` is Torque-specific structured inventory content, so host groups,
   host vars, and group vars must match the playbook target and variable expectations.
 - `torque.collections.export_torque_outputs` is how Ansible grains produce Torque
@@ -143,9 +135,9 @@ consistency before making edits.
 After edits, validate as much as the environment allows:
 
 1. Run `ansible-playbook --syntax-check <workflow>/playbook.yaml`.
-2. Run `ansible-playbook --syntax-check <centralized-teardown-path>`.
-3. Re-read `README.md` and the matching centralized blueprint file to confirm every
-   documented input and output still exists.
+2. Run `ansible-playbook --syntax-check <workflow>/teardown.yaml`.
+3. Re-read `README.md` and `Blueprint.yaml` to confirm every documented input and
+   output still exists.
 4. Use `rg` to find renamed variables or outputs that were missed in sibling files.
 5. If the workflow is device-facing, confirm host-group defaults, connection style,
    and verification logic still match the README contract.

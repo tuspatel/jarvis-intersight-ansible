@@ -1,12 +1,12 @@
 # Blueprint grain snippet (example)
 spec_version: 2
 grains:
-  configure_boot_policy:
+  claim_standalone_cseries:
     kind: ansible
     spec:
       source:
         store: automation-repo
-        path: rack-boot-order-policy/playbook.yaml
+        path: rack-claim-to-intersight-saas/playbook.yaml
       agent:
         name: "{{ .inputs.agent }}"
       inventory-file:
@@ -19,25 +19,19 @@ grains:
             api_private_key: "{{ .params.intersight_api_private_key }}"
             validate_certs: false
       inputs:
-        - organization: "{{ .inputs.organization }}"
-        - boot_policy_name: "{{ .inputs.boot_policy_name }}"
-        - configured_boot_mode: "{{ .inputs.configured_boot_mode }}"
+        - device_serial_number: "{{ .inputs.device_serial_number }}"
+        - device_claim_code: "{{ .inputs.device_claim_code }}"
       outputs:
-        - boot_policy_name
-        - boot_policy_org
-        - boot_policy_state
-        - boot_policy_changed
+        - claim_submitted
+        - claim_changed
+        - device_serial_number
+        - claim_resource_path
       on-destroy:
         source:
           store: automation-repo
-          path: blueprints/rack-boot-order-policy-teardown.yaml
+          path: rack-claim-to-intersight-saas/teardown.yaml
         inventory-file:
           localhost:
             hosts:
               127.0.0.1:
                 ansible_connection: local
-        inputs:
-          - organization: "{{ .inputs.organization }}"
-          - boot_policy_name: "{{ .inputs.boot_policy_name }}"
-          - api_key_id: "{{ .params.intersight_api_key_id }}"
-          - api_private_key: "{{ .params.intersight_api_private_key }}"

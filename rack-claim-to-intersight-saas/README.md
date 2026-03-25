@@ -49,4 +49,4 @@ Legacy variable names are supported:
 
 ## Teardown
 
-`blueprints/rack-claim-to-intersight-saas-teardown.yaml` is intentionally no-op and exports `teardown_status: no_op`.
+`teardown.yaml` is intentionally no-op and exports `teardown_status: no_op`.
