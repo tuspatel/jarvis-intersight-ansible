@@ -11,6 +11,18 @@
 #         path: fi-claim-to-intersight-saas/playbook.yaml
 
 spec_version: 2
+description: Claim a Cisco UCS Fabric Interconnect in Intersight using serial number and claim code.
+
+inputs:
+  agent:
+    type: string
+    description: Torque agent that will run the Ansible grain.
+  fi_serial_number:
+    type: string
+    description: Fabric Interconnect serial number to claim.
+  fi_claim_code:
+    type: string
+    description: Fabric Interconnect claim or security token.
 
 grains:
   claim_fabric_interconnect:
@@ -47,3 +59,13 @@ grains:
             hosts:
               127.0.0.1:
                 ansible_connection: local
+
+outputs:
+  claim_submitted:
+    value: "{{ .grains.claim_fabric_interconnect.outputs.claim_submitted }}"
+  claim_changed:
+    value: "{{ .grains.claim_fabric_interconnect.outputs.claim_changed }}"
+  fi_serial_number:
+    value: "{{ .grains.claim_fabric_interconnect.outputs.fi_serial_number }}"
+  claim_resource_path:
+    value: "{{ .grains.claim_fabric_interconnect.outputs.claim_resource_path }}"
