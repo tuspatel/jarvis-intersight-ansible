@@ -1,0 +1,13 @@
+# Root blueprint catalog
+# Add shared or environment-specific grains here as needed.
+#
+# Example:
+# grains:
+#   claim_fabric_interconnect:
+#     kind: ansible
+#     spec:
+#       source:
+#         store: automation-repo
+#         path: fi-claim-to-intersight-saas/playbook.yaml
+
+grains: {}
