@@ -1,4 +1,5 @@
 # Blueprint grain snippet (example)
+spec_version: 2
 grains:
   configure_firmware_policy:
     kind: ansible
