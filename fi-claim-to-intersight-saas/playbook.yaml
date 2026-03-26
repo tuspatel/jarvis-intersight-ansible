@@ -42,7 +42,7 @@
           SecurityToken: "{{ resolved_fi_claim_code }}"
           SerialNumber: "{{ resolved_fi_serial_number }}"
       register: claim_result
-      no_log: true
+      no_log: false
       tags:
         - claim
         - intersight

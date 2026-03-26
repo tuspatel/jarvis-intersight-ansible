@@ -61,7 +61,7 @@
           - Key: "environment"
             Value: "{{ environment | default('dev') }}"
       register: server_profile_result
-      no_log: true
+      no_log: false
       tags:
         - profile
         - intersight

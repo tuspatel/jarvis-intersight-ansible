@@ -42,7 +42,7 @@
           SecurityToken: "{{ device_claim_code }}"
           SerialNumber: "{{ device_serial_number }}"
       register: claim_result
-      no_log: true
+      no_log: false
       tags:
         - claim
         - intersight

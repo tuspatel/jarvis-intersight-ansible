@@ -24,7 +24,7 @@
         name: "{{ firmware_policy_name }}"
         state: absent
       register: firmware_policy_delete_result
-      no_log: true
+      no_log: false
       tags:
         - firmware
         - policies

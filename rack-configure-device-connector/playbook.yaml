@@ -53,7 +53,7 @@
       register: login_response
       changed_when: false
       failed_when: false
-      no_log: true
+      no_log: false
       tags:
         - cimc
         - auth
@@ -74,7 +74,7 @@
     - name: Extract session cookie from login response
       ansible.builtin.set_fact:
         session_cookie: "{{ login_response.content | regex_search('outCookie=\"([^\"]+)\"', '\\1') | first }}"
-      no_log: true
+      no_log: false
       tags:
         - cimc
         - auth
@@ -108,7 +108,7 @@
       register: current_config
       changed_when: false
       failed_when: false
-      no_log: true
+      no_log: false
       tags:
         - cimc
         - precheck
@@ -132,7 +132,7 @@
           - 204
         timeout: "{{ request_timeout }}"
       register: dns_config_response
-      no_log: true
+      no_log: false
       tags:
         - cimc
         - configure
@@ -155,7 +155,7 @@
       register: verify_config
       changed_when: false
       failed_when: false
-      no_log: true
+      no_log: false
       tags:
         - cimc
         - verify
