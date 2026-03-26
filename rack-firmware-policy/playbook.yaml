@@ -60,7 +60,7 @@
           - Key: "environment"
             Value: "{{ environment | default('dev') }}"
       register: firmware_policy_result
-      no_log: true
+      no_log: false
       tags:
         - firmware
         - policies

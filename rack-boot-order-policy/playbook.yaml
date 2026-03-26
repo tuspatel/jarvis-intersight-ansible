@@ -57,7 +57,7 @@
         configured_boot_mode: "{{ configured_boot_mode }}"
         boot_devices: "{{ boot_devices }}"
       register: boot_policy_result
-      no_log: true
+      no_log: false
       tags:
         - boot
         - policies

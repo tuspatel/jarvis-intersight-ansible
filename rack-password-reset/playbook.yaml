@@ -54,7 +54,7 @@
       register: redfish_account_info
       changed_when: false
       failed_when: false
-      no_log: true
+      no_log: false
       tags:
         - redfish
         - precheck
@@ -105,7 +105,7 @@
         timeout: 30
       register: password_reset_response
       when: password_change_required | bool
-      no_log: true
+      no_log: false
       tags:
         - redfish
         - reset
@@ -125,7 +125,7 @@
       register: redfish_verify_new_password
       when: password_change_required | bool
       changed_when: false
-      no_log: true
+      no_log: false
       tags:
         - redfish
         - verify
