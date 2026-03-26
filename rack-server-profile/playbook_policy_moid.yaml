@@ -58,7 +58,7 @@
           - Key: "environment"
             Value: "{{ environment | default('dev') }}"
       register: standalone_profile_result
-      no_log: false
+      no_log: true
       tags:
         - profile
         - deploy

@@ -24,7 +24,7 @@
         name: "{{ server_profile_name }}"
         state: absent
       register: server_profile_delete_result
-      no_log: false
+      no_log: true
       tags:
         - profile
         - teardown

@@ -54,7 +54,7 @@
           Hostname: "{{ server_cimc_ip }}"
           PlatformType: "{{ platform_type | default('IMC') }}"
       register: claim_result
-      no_log: false
+      no_log: true
       tags:
         - claim
         - intersight
@@ -76,7 +76,7 @@
         - workflow_check.api_response | length > 0
       retries: "{{ workflow_retries }}"
       delay: "{{ workflow_delay }}"
-      no_log: false
+      no_log: true
       tags:
         - claim
         - intersight

@@ -24,7 +24,7 @@
         name: "{{ boot_policy_name }}"
         state: absent
       register: boot_policy_delete_result
-      no_log: false
+      no_log: true
       tags:
         - boot
         - policies
