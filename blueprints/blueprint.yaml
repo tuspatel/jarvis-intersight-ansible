@@ -1,3 +1,7 @@
+# Main Torque-compatible blueprint entrypoint.
+# Use this lowercase blueprint for real Torque execution.
+# This blueprint calls each grain folder's playbook.yaml directly.
+#
 # Root blueprint catalog
 # Add shared or environment-specific grains here as needed.
 #
@@ -48,12 +52,14 @@ grains:
             127.0.0.1:
               ansible_connection: local
           vars:
-            api_key_id: "{{ .inputs.intersight_api_key_id }}"
-            api_private_key: "{{ .inputs.intersight_api_private_key }}"
+        #    api_key_id: "{{ .inputs.intersight_api_key_id }}"
+        #    api_private_key: "{{ .inputs.intersight_api_private_key }}"
             validate_certs: false
       inputs:
         - fi_serial_number: "{{ .inputs.fi_serial_number }}"
         - fi_claim_code: "{{ .inputs.fi_claim_code }}"
+          api_key_id: "{{ .inputs.intersight_api_key_id }}"
+          api_private_key: "{{ .inputs.intersight_api_private_key }}"
       outputs:
         - claim_submitted
         - claim_changed

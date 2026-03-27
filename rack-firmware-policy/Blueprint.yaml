@@ -1,3 +1,6 @@
+# Reference-only skeleton blueprint snippet.
+# Do not use this file for Torque execution; use blueprints/blueprint.yaml instead.
+#
 # Blueprint grain snippet (example)
 spec_version: 2
 grains:

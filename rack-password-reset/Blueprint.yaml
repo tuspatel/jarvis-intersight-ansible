@@ -1,3 +1,6 @@
+# Reference-only skeleton blueprint snippet.
+# Do not use this file for Torque execution; use blueprints/blueprint.yaml instead.
+#
 spec_version: 2
 grains:
   redfish_password_reset:
