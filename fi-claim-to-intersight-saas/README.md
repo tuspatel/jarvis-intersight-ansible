@@ -22,7 +22,8 @@ Claims a Cisco UCS Fabric Interconnect in Intersight using serial number and cla
 |---|---|---|
 | `fi_serial_number` | fallback from `device_serial_number` or `device_id` | Fabric Interconnect serial number |
 | `fi_claim_code` | fallback from `device_claim_code` or `claim_code` | FI claim/security token |
-| `claim_resource_path` | `/api/v1/asset/DeviceClaims` | Intersight claim endpoint |
+| `claim_resource_path` | `/api/v1` + `claim_resource_suffix` | Intersight claim endpoint |
+| `claim_resource_suffix` | `/asset/DeviceClaims` | Suffix appended to the FI claim endpoint base path |
 
 ## Backward Compatibility
 
