@@ -58,8 +58,8 @@ grains:
       inputs:
         - fi_serial_number: "{{ .inputs.fi_serial_number }}"
         - fi_claim_code: "{{ .inputs.fi_claim_code }}"
-          api_key_id: "{{ .inputs.intersight_api_key_id }}"
-          api_private_key: "{{ .inputs.intersight_api_private_key }}"
+        - api_key_id: "{{ .inputs.intersight_api_key_id }}"
+        - api_private_key: "{{ .inputs.intersight_api_private_key }}"
       outputs:
         - claim_submitted
         - claim_changed
