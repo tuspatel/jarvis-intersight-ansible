@@ -15,8 +15,8 @@ grains:
             127.0.0.1:
               ansible_connection: local
           vars:
-            api_key_id: "{{ .inputs.intersight_api_key_id }}"
-            api_private_key: "{{ .inputs.intersight_api_private_key }}"
+         #   api_key_id: "{{ .inputs.intersight_api_key_id }}"
+         #   api_private_key: "{{ .inputs.intersight_api_private_key }}"
             validate_certs: false
       inputs:
         - fi_serial_number: "{{ .inputs.fi_serial_number }}"
