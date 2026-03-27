@@ -14,8 +14,9 @@
 
     resolved_fi_serial_number: "{{ fi_serial_number | default(device_serial_number | default(device_id | default(''))) }}"
     resolved_fi_claim_code: "{{ fi_claim_code | default(device_claim_code | default(claim_code | default(''))) }}"
-    claim_resource_suffix: "{{ claim_resource_suffix | default('/asset/DeviceClaims') }}"
-    resolved_claim_resource_path: "{{ claim_resource_path | default('/api/v1') ~ claim_resource_suffix }}"
+   # claim_resource_suffix: "{{ claim_resource_suffix | default('/asset/DeviceClaims') }}"
+   # resolved_claim_resource_path: "{{ claim_resource_path | default('/api/v1') ~ claim_resource_suffix }}"
+    resolved_claim_resource_path: "{{ claim_resource_path | default('/asset/DeviceClaims') }}"
 
   pre_tasks:
     - name: Validate required FI claim inputs and API auth
